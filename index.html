@@ -8,53 +8,65 @@
 
     <script>
         // 1) Function to fetch user's public IP
-        async function getIP() {
-            try {
-                // You can use any public IP API
-                const res = await fetch("https://api.ipify.org?format=json");
-                const data = await res.json();
-                return data.ip; 
-            } catch (e) {
-                console.error("Failed to get IP:", e);
-                return "0.0.0.0"; // fallback
-            }
-        }
+async function getIP() {
+    try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip; 
+    } catch (e) {
+        console.error("Failed to get IP:", e);
+        return "0.0.0.0"; 
+    }
+}
 
-        // 2) Once we have the IP, build the impression URL and fire it
-        async function fireImpression() {
-            const ip = await getIP();
+// Get timestamp for campaign name
+function getTimestamp() {
+    const now = new Date();
+    // Example format: 2025-01-18_14-30-05
+    const stamp = now.getFullYear() + "-" +
+        String(now.getMonth()+1).padStart(2, "0") + "-" +
+        String(now.getDate()).padStart(2, "0") + "_" +
+        String(now.getHours()).padStart(2, "0") + "-" +
+        String(now.getMinutes()).padStart(2, "0") + "-" +
+        String(now.getSeconds()).padStart(2, "0");
+    return stamp;
+}
 
-            // build impression URL with dynamic IP value
-            const impressionUrl = 
-                "https://impression.link/impression?" +
-                "branch_key=key_live_nm1czL3I0Yb9CqKay7KJShhdzAipVf94" +
-                "&%243p=a_join_ship" +
-                "&~branch_ad_format=App%20Only" +
-                "&~campaign=branchSupportTest" +
-                "&~click_id=123456" +
-                "&~feature=paid%20advertising" +
-                "&~link_type=AD_LINK" +
-                "&~secondary_publisher={affiliate_id}_{affiliate_sub_id}" +
-                "&~agency_id=763026792704397643" +
-                "&~ad_set_id=490_154" +
-                "&%24cross_device=true" +
-                "&user_agent=" + encodeURIComponent(navigator.userAgent) +
-                "&%24household_measurement=true" +
-                "&%24s2s=true" +
-                "&device_ip=" + encodeURIComponent(ip);
+// 2) Fire impression with dynamic campaign timestamp
+async function fireImpression() {
+    const ip = await getIP();
+    const campaignName = "branchSupportTest_" + getTimestamp(); 
 
-            console.log("Firing impression:", impressionUrl);
+    const impressionUrl = 
+        "https://impression.link/impression?" +
+        "branch_key=key_live_nm1czL3I0Yb9CqKay7KJShhdzAipVf94" +
+        "&%243p=a_join_ship" +
+        "&~branch_ad_format=App%20Only" +
+        "&~campaign=" + encodeURIComponent(campaignName) +
+        "&~click_id={transaction_id}" +
+        "&~feature=paid%20advertising" +
+        "&~link_type=AD_LINK" +
+        "&~secondary_publisher={affiliate_id}_{affiliate_sub_id}" +
+        "&~agency_id=763026792704397643" +
+        "&~ad_set_id=490_154" +
+        "&%24cross_device=true" +
+        "&user_agent=" + encodeURIComponent(navigator.userAgent) +
+        "&%24household_measurement=true" +
+        "&%24s2s=true" +
+        "&device_ip=" + encodeURIComponent(ip);
 
-            // 3) Create hidden image pixel to load the impression URL
-            const img = document.createElement("img");
-            img.src = impressionUrl;
-            img.width = 1;
-            img.height = 1;
-            img.style.display = "none";
-            document.body.appendChild(img);
-        }
+    console.log("Firing impression:", impressionUrl);
 
-        fireImpression();
+    const img = document.createElement("img");
+    img.src = impressionUrl;
+    img.width = 1;
+    img.height = 1;
+    img.style.display = "none";
+    document.body.appendChild(img);
+}
+
+fireImpression();
+
     </script>
 
 </body>
