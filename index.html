@@ -1,72 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dynamic IP Impression</title>
+    <title>Impression Simulator with IP Override</title>
 </head>
 <body>
-    <p>Loading impression…</p>
+
+    <h2>Impression Simulator</h2>
+
+    <label>Override IP (optional):</label><br>
+    <input type="text" id="manualIp" placeholder="Enter IP (e.g., 123.45.67.89)" style="width:250px;">
+    <button onclick="fireImpression()">Fire Impression</button>
+
+    <h3>Payload Being Sent:</h3>
+    <pre id="payloadBox">Waiting...</pre>
 
     <script>
-        // 1) Function to fetch user's public IP
-async function getIP() {
-    try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        return data.ip; 
-    } catch (e) {
-        console.error("Failed to get IP:", e);
-        return "0.0.0.0"; 
-    }
-}
+        async function getIP() {
+            try {
+                const res = await fetch("https://api.ipify.org?format=json");
+                const data = await res.json();
+                return data.ip;
+            } catch (e) {
+                console.error("Failed to get IP:", e);
+                return "0.0.0.0";
+            }
+        }
 
-// Get timestamp for campaign name
-function getTimestamp() {
-    const now = new Date();
-    // Example format: 2025-01-18_14-30-05
-    const stamp = now.getFullYear() + "-" +
-        String(now.getMonth()+1).padStart(2, "0") + "-" +
-        String(now.getDate()).padStart(2, "0") + "_" +
-        String(now.getHours()).padStart(2, "0") + "-" +
-        String(now.getMinutes()).padStart(2, "0") + "-" +
-        String(now.getSeconds()).padStart(2, "0");
-    return stamp;
-}
+        function getTimestamp() {
+            const now = new Date();
+            return now.getFullYear() + "-" +
+                String(now.getMonth()+1).padStart(2, "0") + "-" +
+                String(now.getDate()).padStart(2, "0") + "_" +
+                String(now.getHours()).padStart(2, "0") + "-" +
+                String(now.getMinutes()).padStart(2, "0") + "-" +
+                String(now.getSeconds()).padStart(2, "0");
+        }
 
-// 2) Fire impression with dynamic campaign timestamp
-async function fireImpression() {
-    const ip = await getIP();
-    const campaignName = "branchSupportTest_" + getTimestamp(); 
+        async function fireImpression() {
+            // Check for manual override
+            let ip = document.getElementById("manualIp").value.trim();
 
-    const impressionUrl = 
-        "https://impression.link/impression?" +
-        "branch_key=key_live_nm1czL3I0Yb9CqKay7KJShhdzAipVf94" +
-        "&%243p=a_join_ship" +
-        "&~branch_ad_format=App%20Only" +
-        "&~campaign=" + encodeURIComponent(campaignName) +
-        "&~click_id={transaction_id}" +
-        "&~feature=paid%20advertising" +
-        "&~link_type=AD_LINK" +
-        "&~secondary_publisher={affiliate_id}_{affiliate_sub_id}" +
-        "&~agency_id=763026792704397643" +
-        "&~ad_set_id=490_154" +
-        "&%24cross_device=true" +
-        "&user_agent=" + encodeURIComponent(navigator.userAgent) +
-        "&%24household_measurement=true" +
-        "&%24s2s=true" +
-        "&device_ip=" + encodeURIComponent(ip);
+            // If no manual IP is provided → fetch real IP
+            if (!ip) {
+                ip = await getIP();
+            }
 
-    console.log("Firing impression:", impressionUrl);
+            const userAgent = navigator.userAgent;
+            const timestamp = getTimestamp();
+            const campaignName = "branchSupportTest_" + timestamp;
 
-    const img = document.createElement("img");
-    img.src = impressionUrl;
-    img.width = 1;
-    img.height = 1;
-    img.style.display = "none";
-    document.body.appendChild(img);
-}
+            const impressionUrl =
+                "https://impression.link/impression?" +
+                "branch_key=key_live_nm1czL3I0Yb9CqKay7KJShhdzAipVf94" +
+                "&%243p=a_join_ship" +
+                "&~branch_ad_format=App%20Only" +
+                "&~campaign=" + encodeURIComponent(campaignName) +
+                "&~click_id={transaction_id}" +
+                "&~feature=paid%20advertising" +
+                "&~link_type=AD_LINK" +
+                "&~secondary_publisher={affiliate_id}_{affiliate_sub_id}" +
+                "&~agency_id=763026792704397643" +
+                "&~ad_set_id=490_154" +
+                "&%24cross_device=true" +
+                "&user_agent=" + encodeURIComponent(userAgent) +
+                "&%24household_measurement=true" +
+                "&%24s2s=true" +
+                "&device_ip=" + encodeURIComponent(ip);
 
-fireImpression();
+            // Display payload
+            document.getElementById("payloadBox").textContent =
+                "Final IP Used: " + ip + "\n" +
+                "User Agent: " + userAgent + "\n" +
+                "Campaign: " + campaignName + "\n" +
+                "Timestamp: " + timestamp + "\n\n" +
+                "Full Impression URL:\n" + impressionUrl + "\n";
 
+            // Fire impression pixel
+            const img = document.createElement("img");
+            img.src = impressionUrl;
+            img.width = 1;
+            img.height = 1;
+            img.style.display = "none";
+            document.body.appendChild(img);
+        }
     </script>
 
 </body>
